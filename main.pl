@@ -12,3 +12,5 @@ word_grid(WS) :-
     length(VS, N),
     all_words(WS),
     all_words(VS).
+
+% test
