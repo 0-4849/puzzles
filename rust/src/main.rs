@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-const GRID_WIDTH: usize = 2;
-const GRID_HEIGHT: usize = 2;
+const GRID_WIDTH: usize = 4;
+const GRID_HEIGHT: usize = 3;
 const MAX_WORD_LENGTH: usize = 25;
 
 fn main() -> std::io::Result<()> {
@@ -26,8 +26,14 @@ fn main() -> std::io::Result<()> {
     }
 
     let grid = [[0; GRID_WIDTH]; GRID_HEIGHT];
+    let solution = solve(grid, &dictionary);
+    let solution_string = solution.map(|s| format_solution(&s));
 
-    println!("{:?}", solve(grid, &dictionary));
+    if let Some(s) = solution_string {
+        println!("{}", s);
+    } else {
+        println!("no solution found")
+    }
 
     Ok(())
 }
@@ -60,6 +66,14 @@ fn solve(
     }
 
     Some(grid)
+}
+
+fn format_solution(&solution: &[[u8; GRID_WIDTH]; GRID_HEIGHT]) -> String {
+    solution
+        .iter()
+        .map(|s| String::from_utf8(s.to_vec()).expect("incorrect utf8 encoding"))
+        .collect::<Vec<String>>()
+        .join("\n")
 }
 
 // fn get_dictionary(file_name: String) -> std::io::Result<Vec<Vec<&[u8]>>> {
