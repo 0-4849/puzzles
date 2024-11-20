@@ -27,12 +27,7 @@ fn main() -> std::io::Result<()> {
 
     let grid = [[0; GRID_WIDTH]; GRID_HEIGHT];
 
-    println!(
-        "{:?}",
-        solve(grid, &dictionary)
-            .map(|x| x.into_iter().map(|s| s.to_owned()))
-            .unwrap()
-    );
+    println!("{:?}", solve(grid, &dictionary));
 
     Ok(())
 }
@@ -52,17 +47,14 @@ fn solve(
                         let mut word = [0; GRID_HEIGHT];
 
                         for y in 0..GRID_HEIGHT {
-                            word[y] = new_grid[y][x];
+                            word[y] = sol[y][x];
                         }
                         if !dictionary[GRID_HEIGHT].binary_search(&&word[..]).is_ok() {
-                            println!("{:?}", word);
                             continue 'word_loop;
                         }
                     }
                     return Some(sol);
-                } else {
-                    continue;
-                };
+                }
             }
         }
     }

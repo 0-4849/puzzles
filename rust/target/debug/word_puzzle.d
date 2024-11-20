@@ -1,1 +1,1 @@
-/home/tars/Tars/Speel/Rust/word_puzzle/target/debug/word_puzzle: /home/tars/Tars/Speel/Rust/word_puzzle/src/main.rs
+/home/tars/word_puzzle/rust/target/debug/word_puzzle: /home/tars/word_puzzle/rust/src/main.rs
