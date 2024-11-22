@@ -65,26 +65,39 @@ fn solve(
 ) -> Option<[[u8; GRID_WIDTH]; GRID_HEIGHT]> {
     let mut new_grid = grid;
 
-    for (index, row) in grid.iter().enumerate() {
-        if row[0] == 0 {
-            'word_loop: for word in dictionary[GRID_WIDTH].iter() {
-                new_grid[index] = (*word).try_into().expect("wrong word length");
-                if let Some(sol) = solve(new_grid, dictionary) {
-                    for x in 0..GRID_WIDTH {
-                        let mut word = [0; GRID_HEIGHT];
+//    for (index, row) in grid.iter().enumerate() {
+//        if row[0] == 0 {
+//            'word_loop: for word in dictionary[GRID_WIDTH].iter() {
+//                new_grid[index] = (*word).try_into().expect("wrong word length");
+//                if let Some(sol) = solve(new_grid, dictionary) {
+//                    for x in 0..GRID_WIDTH {
+//                        let mut word = [0; GRID_HEIGHT];
+//
+//                        for y in 0..GRID_HEIGHT {
+//                            word[y] = sol[y][x];
+//                        }
+//                        if !dictionary[GRID_HEIGHT].binary_search(&&word[..]).is_ok() {
+//                            continue 'word_loop;
+//                        }
+//                    }
+//                    return Some(sol);
+//                }
+//            }
+//        }
+//    }
 
-                        for y in 0..GRID_HEIGHT {
-                            word[y] = sol[y][x];
-                        }
-                        if !dictionary[GRID_HEIGHT].binary_search(&&word[..]).is_ok() {
-                            continue 'word_loop;
-                        }
-                    }
-                    return Some(sol);
-                }
-            }
+    if let Some((direction, index)) =  determine_most_constrained_variable(&grid, &dictionary) {
+        match direction {
+            Direction::Horizontal => {
+                ()
+            },
+            Direction::Vertical => {
+                ()
+            },
         }
-    }
+    } else {
+        Some(grid)
+    };
 
     Some(grid)
 }
@@ -154,21 +167,27 @@ fn determine_most_constrained_variable(
         *number_of_options = upper_bound_pos - lower_bound_pos;
     }
 
+    // find the row (or column) with the least amount of possible options
+    // this is returned in a tuple with its index
+    // we map the zeros to the u8::MAX, so that 0 is not included in the minimum
+    // since 0 indicates that the entire row is already filled in
     let (min_row_index, min_row) = number_of_options_rows
         .iter()
+        .map(|x| if *x == 0 { usize::MAX } else { *x })
         .enumerate()
         .min_by(|(_, m), (_, n)| m.cmp(n))
         .unwrap();
 
     let (min_col_index, min_col) = number_of_options_cols
         .iter()
+        .map(|x| if *x == 0 { usize::MAX } else { *x })
         .enumerate()
         .min_by(|(_, m), (_, n)| m.cmp(n))
         .unwrap();
 
     println!("{:?}, {:?}", number_of_options_cols, number_of_options_rows);
 
-    if *min_row == 0 && *min_col == 0 {
+    if min_row == 0 && min_col == 0 {
         None
     } else if min_row > min_col {
         Some((Direction::Horizontal, min_row_index))
