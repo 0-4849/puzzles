@@ -3,6 +3,12 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
 
+struct Grid<'a> {
+    grid: [u8; GRID_HEIGHT * GRID_WIDTH],
+    row_options: &'a [u8],
+    col_options: &'a [u8],
+}
+
 #[derive(Debug)]
 enum Direction {
     Horizontal,
@@ -65,35 +71,31 @@ fn solve(
 ) -> Option<[[u8; GRID_WIDTH]; GRID_HEIGHT]> {
     let mut new_grid = grid;
 
-//    for (index, row) in grid.iter().enumerate() {
-//        if row[0] == 0 {
-//            'word_loop: for word in dictionary[GRID_WIDTH].iter() {
-//                new_grid[index] = (*word).try_into().expect("wrong word length");
-//                if let Some(sol) = solve(new_grid, dictionary) {
-//                    for x in 0..GRID_WIDTH {
-//                        let mut word = [0; GRID_HEIGHT];
-//
-//                        for y in 0..GRID_HEIGHT {
-//                            word[y] = sol[y][x];
-//                        }
-//                        if !dictionary[GRID_HEIGHT].binary_search(&&word[..]).is_ok() {
-//                            continue 'word_loop;
-//                        }
-//                    }
-//                    return Some(sol);
-//                }
-//            }
-//        }
-//    }
+    //    for (index, row) in grid.iter().enumerate() {
+    //        if row[0] == 0 {
+    //            'word_loop: for word in dictionary[GRID_WIDTH].iter() {
+    //                new_grid[index] = (*word).try_into().expect("wrong word length");
+    //                if let Some(sol) = solve(new_grid, dictionary) {
+    //                    for x in 0..GRID_WIDTH {
+    //                        let mut word = [0; GRID_HEIGHT];
+    //
+    //                        for y in 0..GRID_HEIGHT {
+    //                            word[y] = sol[y][x];
+    //                        }
+    //                        if !dictionary[GRID_HEIGHT].binary_search(&&word[..]).is_ok() {
+    //                            continue 'word_loop;
+    //                        }
+    //                    }
+    //                    return Some(sol);
+    //                }
+    //            }
+    //        }
+    //    }
 
-    if let Some((direction, index)) =  determine_most_constrained_variable(&grid, &dictionary) {
+    if let Some((direction, index)) = determine_most_constrained_variable(&grid, &dictionary) {
         match direction {
-            Direction::Horizontal => {
-                ()
-            },
-            Direction::Vertical => {
-                ()
-            },
+            Direction::Horizontal => None,
+            Direction::Vertical => None,
         }
     } else {
         Some(grid)
@@ -102,6 +104,9 @@ fn solve(
     Some(grid)
 }
 
+// return the direction (row = hor, col = vert)
+// along with the row/col number and (TODO) constraints:
+// the bounds wherein the possible words lie
 fn determine_most_constrained_variable(
     grid: &[[u8; GRID_WIDTH]; GRID_HEIGHT],
     dictionary: &Vec<Vec<&[u8]>>,
