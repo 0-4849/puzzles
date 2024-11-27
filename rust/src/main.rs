@@ -3,10 +3,11 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
 
+#[derive(Debug)]
 struct Grid<'a> {
-    grid: [u8; GRID_HEIGHT * GRID_WIDTH],
-    row_options: &'a [u8],
-    col_options: &'a [u8],
+    grid: [[u8; GRID_WIDTH]; GRID_HEIGHT],
+    row_options: Vec<&[u8]>,
+    col_options: Vec<&[u8]>,
 }
 
 #[derive(Debug)]
@@ -39,7 +40,12 @@ fn main() -> std::io::Result<()> {
         lists.sort();
     }
 
-    let grid = [[0; GRID_WIDTH]; GRID_HEIGHT];
+    let grid = Grid {
+        grid: [[0; GRID_WIDTH]; GRID_HEIGHT],
+        row_options: Vec::new(),
+        col_options: Vec::new(),
+    }
+
 
     let start = Instant::now();
     let solution = solve(grid, &dictionary);
@@ -53,7 +59,7 @@ fn main() -> std::io::Result<()> {
 
     println!(
         "{:?}",
-        determine_most_constrained_variable(&partial, &dictionary)
+        update_bounds(&partial, &dictionary)
     );
 
     if let Some(s) = solution_string {
@@ -92,7 +98,7 @@ fn solve(
     //        }
     //    }
 
-    if let Some((direction, index)) = determine_most_constrained_variable(&grid, &dictionary) {
+    if let Some((direction, index)) = update_bounds(&grid, &dictionary) {
         match direction {
             Direction::Horizontal => None,
             Direction::Vertical => None,
@@ -107,97 +113,17 @@ fn solve(
 // return the direction (row = hor, col = vert)
 // along with the row/col number and (TODO) constraints:
 // the bounds wherein the possible words lie
-fn determine_most_constrained_variable(
-    grid: &[[u8; GRID_WIDTH]; GRID_HEIGHT],
+fn update_bounds(
+    grid: &Grid,
     dictionary: &Vec<Vec<&[u8]>>,
 ) -> Option<(Direction, usize)> {
     // store the number of possible words which
     // can be filled in for each of the columns
-    let mut number_of_options_rows = vec![0; grid.len()];
-    let mut number_of_options_cols = vec![0; grid[0].len()];
+    let mut options_rows = Vec::new();
+    let mut options_cols = Vec::new();
 
-    for (number_of_options, row) in number_of_options_rows.iter_mut().zip(grid) {
-        // we will binary search the (sorted) dictionary for
-        // the lower bound, above which are words which can fill in row
-        // the upper bound, below which are words which can fill in row
-        // we expect the search to fail, but for it to return
-        // the point where it has failed
-        // we can then take the difference of the lower and upper bound
-        // and this gives us the number of options which can fill in row
-        let lower_bound = row;
-        let mut upper_bound = row.clone();
-
-        for c in &mut upper_bound {
-            if *c == 0 {
-                *c = u8::MAX;
-            }
-        }
-
-        let lower_bound_pos = match dictionary[GRID_WIDTH].binary_search(&&lower_bound[..]) {
-            Ok(x) => x,
-            Err(x) => x,
-        };
-
-        let upper_bound_pos = match dictionary[GRID_WIDTH].binary_search(&&upper_bound[..]) {
-            Ok(x) => x,
-            Err(x) => x,
-        };
-
-        *number_of_options = upper_bound_pos - lower_bound_pos;
-    }
-
-    for (col_index, number_of_options) in number_of_options_cols.iter_mut().enumerate() {
-        let mut lower_bound = [0; GRID_HEIGHT];
-        for row_index in 0..grid.len() {
-            lower_bound[row_index] = grid[row_index][col_index];
-        }
-        let mut upper_bound = lower_bound.clone();
-
-        for c in &mut upper_bound {
-            if *c == 0 {
-                *c = u8::MAX;
-            }
-        }
-
-        let lower_bound_pos = match dictionary[GRID_WIDTH].binary_search(&&lower_bound[..]) {
-            Ok(x) => x,
-            Err(x) => x,
-        };
-
-        let upper_bound_pos = match dictionary[GRID_WIDTH].binary_search(&&upper_bound[..]) {
-            Ok(x) => x,
-            Err(x) => x,
-        };
-
-        *number_of_options = upper_bound_pos - lower_bound_pos;
-    }
-
-    // find the row (or column) with the least amount of possible options
-    // this is returned in a tuple with its index
-    // we map the zeros to the u8::MAX, so that 0 is not included in the minimum
-    // since 0 indicates that the entire row is already filled in
-    let (min_row_index, min_row) = number_of_options_rows
-        .iter()
-        .map(|x| if *x == 0 { usize::MAX } else { *x })
-        .enumerate()
-        .min_by(|(_, m), (_, n)| m.cmp(n))
-        .unwrap();
-
-    let (min_col_index, min_col) = number_of_options_cols
-        .iter()
-        .map(|x| if *x == 0 { usize::MAX } else { *x })
-        .enumerate()
-        .min_by(|(_, m), (_, n)| m.cmp(n))
-        .unwrap();
-
-    println!("{:?}, {:?}", number_of_options_cols, number_of_options_rows);
-
-    if min_row == 0 && min_col == 0 {
-        None
-    } else if min_row > min_col {
-        Some((Direction::Horizontal, min_row_index))
-    } else {
-        Some((Direction::Vertical, min_col_index))
+    for word in dictionary[grid.grid[0].len()] {
+        
     }
 }
 
