@@ -6,8 +6,8 @@ use std::time::Instant;
 #[derive(Debug)]
 struct Grid<'a> {
     grid: [[u8; GRID_WIDTH]; GRID_HEIGHT],
-    row_options: Vec<&[u8]>,
-    col_options: Vec<&[u8]>,
+    row_options: Vec<&'a [u8]>,
+    col_options: Vec<&'a [u8]>,
 }
 
 #[derive(Debug)]
@@ -44,7 +44,7 @@ fn main() -> std::io::Result<()> {
         grid: [[0; GRID_WIDTH]; GRID_HEIGHT],
         row_options: Vec::new(),
         col_options: Vec::new(),
-    }
+    };
 
 
     let start = Instant::now();
@@ -57,10 +57,6 @@ fn main() -> std::io::Result<()> {
 
     let partial = [[98, 101, 100], [0, 0, 0], [0, 0, 0]];
 
-    println!(
-        "{:?}",
-        update_bounds(&partial, &dictionary)
-    );
 
     if let Some(s) = solution_string {
         println!("{}", s);
@@ -71,10 +67,10 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn solve(
-    grid: [[u8; GRID_WIDTH]; GRID_HEIGHT],
-    dictionary: &Vec<Vec<&[u8]>>,
-) -> Option<[[u8; GRID_WIDTH]; GRID_HEIGHT]> {
+fn solve<'a>(
+    grid: Grid<'a>,
+    dictionary: &'a Vec<Vec<&'a [u8]>>,
+) -> Option<Grid<'a>> {
     let mut new_grid = grid;
 
     //    for (index, row) in grid.iter().enumerate() {
@@ -119,12 +115,21 @@ fn update_bounds(
 ) -> Option<(Direction, usize)> {
     // store the number of possible words which
     // can be filled in for each of the columns
-    let mut options_rows = Vec::new();
-    let mut options_cols = Vec::new();
+    let mut options_rows = vec![Vec::new(); GRID_HEIGHT];
+    let mut options_cols = vec![Vec::new(); GRID_HEIGHT];
 
-    for word in dictionary[grid.grid[0].len()] {
-        
+    for (row_index, row) in grid.grid.iter().enumerate() {
+        'word_loop: for word in dictionary[grid.grid[0].len()] {
+            for i in 0..GRID_WIDTH {
+                if row[i] != 0 && row[i] != word[i] {
+                    continue 'word_loop;
+                }
+            }
+            options_rows[row_index].push(word);
+
+        }
     }
+    None
 }
 
 fn format_solution(&solution: &[[u8; GRID_WIDTH]; GRID_HEIGHT]) -> String {
