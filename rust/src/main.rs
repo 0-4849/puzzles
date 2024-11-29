@@ -6,8 +6,8 @@ use std::time::Instant;
 #[derive(Debug)]
 struct Grid<'a> {
     grid: [[u8; GRID_WIDTH]; GRID_HEIGHT],
-    row_options: Vec<&'a [u8]>,
-    col_options: Vec<&'a [u8]>,
+    row_options: Vec<Vec<&'a [u8]>>,
+    col_options: Vec<Vec<&'a [u8]>>,
 }
 
 #[derive(Debug)]
@@ -68,10 +68,10 @@ fn main() -> std::io::Result<()> {
 }
 
 fn solve<'a>(
-    grid: Grid<'a>,
+    mut grid: Grid<'a>,
     dictionary: &'a Vec<Vec<&'a [u8]>>,
 ) -> Option<Grid<'a>> {
-    let mut new_grid = grid;
+    //let mut new_grid = grid;
 
     //    for (index, row) in grid.iter().enumerate() {
     //        if row[0] == 0 {
@@ -94,13 +94,13 @@ fn solve<'a>(
     //        }
     //    }
 
-    if let Some((direction, index)) = update_bounds(&grid, &dictionary) {
+    if let Some((direction, index)) = update_bounds(&mut grid, &dictionary) {
         match direction {
-            Direction::Horizontal => None,
-            Direction::Vertical => None,
+            Direction::Horizontal => { return None; },
+            Direction::Vertical => { return None; },
         }
     } else {
-        Some(grid)
+        return Some(grid);
     };
 
     Some(grid)
@@ -109,31 +109,33 @@ fn solve<'a>(
 // return the direction (row = hor, col = vert)
 // along with the row/col number and (TODO) constraints:
 // the bounds wherein the possible words lie
-fn update_bounds(
-    grid: &Grid,
-    dictionary: &Vec<Vec<&[u8]>>,
+fn update_bounds<'a>(
+    grid: &'a mut Grid<'a>,
+    dictionary: &Vec<Vec<&'a [u8]>>,
 ) -> Option<(Direction, usize)> {
     // store the number of possible words which
     // can be filled in for each of the columns
-    let mut options_rows = vec![Vec::new(); GRID_HEIGHT];
-    let mut options_cols = vec![Vec::new(); GRID_HEIGHT];
+    //let mut options_rows = vec![Vec::new(); GRID_HEIGHT];
+    //let mut options_cols = vec![Vec::new(); GRID_HEIGHT];
 
     for (row_index, row) in grid.grid.iter().enumerate() {
-        'word_loop: for word in dictionary[grid.grid[0].len()] {
+        'word_loop: for word in dictionary[grid.grid[0].len()].iter() {
             for i in 0..GRID_WIDTH {
                 if row[i] != 0 && row[i] != word[i] {
                     continue 'word_loop;
                 }
             }
-            options_rows[row_index].push(word);
+            grid.row_options[row_index].push(word);
 
         }
     }
+
     None
 }
 
-fn format_solution(&solution: &[[u8; GRID_WIDTH]; GRID_HEIGHT]) -> String {
+fn format_solution(solution: &Grid) -> String {
     solution
+        .grid
         .iter()
         .map(|s| String::from_utf8(s.to_vec()).expect("incorrect utf8 encoding"))
         .collect::<Vec<String>>()
