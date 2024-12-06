@@ -1,4 +1,3 @@
-use std::cmp::min_by;
 use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
@@ -41,29 +40,23 @@ fn main() -> std::io::Result<()> {
     }
 
     let mut grid = Grid {
-        grid: [[97, 98],[0,0]],
+        grid: [[97, 0], [98, 0]],
         row_options: vec![dictionary[GRID_WIDTH].clone(); GRID_HEIGHT],
         col_options: vec![dictionary[GRID_WIDTH].clone(); GRID_WIDTH],
     };
 
-    println!("{:?}", grid);
-    update_bounds(&mut grid, &dictionary);
-    println!("{:#?}", grid);
-
-
     let start = Instant::now();
-    let solution = solve(grid, &dictionary);
-    let elapsed = start.elapsed();
 
-    let solution_string = solution.map(|s| format_solution(&s));
+    update_bounds(&mut grid);
+    println!("{:?}", grid);
+
+    let elapsed = start.elapsed();
 
     println!("took {:?}", elapsed);
 
-    let partial = [[98, 101, 100], [0, 0, 0], [0, 0, 0]];
-
-
-    if let Some(s) = solution_string {
-        println!("{}", s);
+    let solution = solve(grid, &dictionary);
+    if let Some(s) = solution {
+        println!("{}", format_solution(&s));
     } else {
         println!("no solution found")
     }
@@ -71,11 +64,8 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn solve<'a>(
-    mut grid: Grid<'a>,
-    dictionary: &'a Vec<Vec<&'a [u8]>>,
-) -> Option<Grid<'a>> {
-    //let mut new_grid = grid;
+fn solve<'a>(grid: Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid<'a>> {
+    let mut new_grid = (grid).clone();
 
     //    for (index, row) in grid.iter().enumerate() {
     //        if row[0] == 0 {
@@ -107,32 +97,33 @@ fn solve<'a>(
     //     return Some(grid);
     // };
 
-    Some(grid)
+    Some(new_grid)
 }
 
-// return the direction (row = hor, col = vert)
-// along with the row/col number and (TODO) constraints:
-// the bounds wherein the possible words lie
-fn update_bounds<'a>(
-    grid: &mut Grid<'a>,
-    dictionary: &Vec<Vec<&'a [u8]>>,
-) {
-    // store the number of possible words which
-    // can be filled in for each of the columns
-    //let mut options_rows = vec![Vec::new(); GRID_HEIGHT];
-    //let mut options_cols = vec![Vec::new(); GRID_HEIGHT];
-
-    for (row_index, row) in grid.grid.iter().enumerate() {
+// update the list of possible words for all the rows and columns
+// based on what letters are already filled in in the grid
+fn update_bounds<'a>(grid: &mut Grid<'a>) {
+    for row_index in 0..GRID_HEIGHT {
         grid.row_options[row_index].retain(|&word| {
-
+            for i in 0..GRID_WIDTH {
+                if grid.grid[row_index][i] != 0 && grid.grid[row_index][i] != word[i] {
+                    return false;
+                }
+            }
+            true
         });
-        // 'word_loop: for word_index in 0..grid.row_options[row_index].len()-1 {
-        //     for i in 0..GRID_WIDTH-1 {
-        //         if row[i] != 0 && row[i] != grid.row_options[row_index][row_index][i] {
-        //             grid.row_options[row_index].remove(word_index);
-        //         }
-        //     }
-        // }
+    }
+
+    for col_index in 0..GRID_WIDTH {
+        grid.col_options[col_index].retain(|&word| {
+            for i in 0..GRID_HEIGHT {
+                if grid.grid[i][col_index] != 0 && grid.grid[i][col_index] != word[i] {
+                    return false;
+                }
+            }
+
+            true
+        });
     }
 }
 
