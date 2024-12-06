@@ -3,7 +3,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Grid<'a> {
     grid: [[u8; GRID_WIDTH]; GRID_HEIGHT],
     row_options: Vec<Vec<&'a [u8]>>,
@@ -16,8 +16,8 @@ enum Direction {
     Vertical,
 }
 
-const GRID_WIDTH: usize = 3;
-const GRID_HEIGHT: usize = 3;
+const GRID_WIDTH: usize = 2;
+const GRID_HEIGHT: usize = 2;
 const MAX_WORD_LENGTH: usize = 25;
 
 fn main() -> std::io::Result<()> {
@@ -40,11 +40,15 @@ fn main() -> std::io::Result<()> {
         lists.sort();
     }
 
-    let grid = Grid {
-        grid: [[0; GRID_WIDTH]; GRID_HEIGHT],
-        row_options: Vec::new(),
-        col_options: Vec::new(),
+    let mut grid = Grid {
+        grid: [[97, 98],[0,0]],
+        row_options: vec![dictionary[GRID_WIDTH].clone(); GRID_HEIGHT],
+        col_options: vec![dictionary[GRID_WIDTH].clone(); GRID_WIDTH],
     };
+
+    println!("{:?}", grid);
+    update_bounds(&mut grid, &dictionary);
+    println!("{:#?}", grid);
 
 
     let start = Instant::now();
@@ -94,14 +98,14 @@ fn solve<'a>(
     //        }
     //    }
 
-    if let Some((direction, index)) = update_bounds(&mut grid, &dictionary) {
-        match direction {
-            Direction::Horizontal => { return None; },
-            Direction::Vertical => { return None; },
-        }
-    } else {
-        return Some(grid);
-    };
+    // if let Some((direction, index)) = update_bounds(&mut grid.clone(), &dictionary) {
+    //     match direction {
+    //         Direction::Horizontal => { return None; },
+    //         Direction::Vertical => { return None; },
+    //     }
+    // } else {
+    //     return Some(grid);
+    // };
 
     Some(grid)
 }
@@ -110,27 +114,26 @@ fn solve<'a>(
 // along with the row/col number and (TODO) constraints:
 // the bounds wherein the possible words lie
 fn update_bounds<'a>(
-    grid: &'a mut Grid<'a>,
+    grid: &mut Grid<'a>,
     dictionary: &Vec<Vec<&'a [u8]>>,
-) -> Option<(Direction, usize)> {
+) {
     // store the number of possible words which
     // can be filled in for each of the columns
     //let mut options_rows = vec![Vec::new(); GRID_HEIGHT];
     //let mut options_cols = vec![Vec::new(); GRID_HEIGHT];
 
     for (row_index, row) in grid.grid.iter().enumerate() {
-        'word_loop: for word in dictionary[grid.grid[0].len()].iter() {
-            for i in 0..GRID_WIDTH {
-                if row[i] != 0 && row[i] != word[i] {
-                    continue 'word_loop;
-                }
-            }
-            grid.row_options[row_index].push(word);
+        grid.row_options[row_index].retain(|&word| {
 
-        }
+        });
+        // 'word_loop: for word_index in 0..grid.row_options[row_index].len()-1 {
+        //     for i in 0..GRID_WIDTH-1 {
+        //         if row[i] != 0 && row[i] != grid.row_options[row_index][row_index][i] {
+        //             grid.row_options[row_index].remove(word_index);
+        //         }
+        //     }
+        // }
     }
-
-    None
 }
 
 fn format_solution(solution: &Grid) -> String {
