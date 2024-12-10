@@ -9,12 +9,6 @@ struct Grid<'a> {
     col_options: Vec<Vec<&'a [u8]>>,
 }
 
-#[derive(Debug)]
-enum Direction {
-    Horizontal,
-    Vertical,
-}
-
 const GRID_WIDTH: usize = 2;
 const GRID_HEIGHT: usize = 2;
 const MAX_WORD_LENGTH: usize = 25;
@@ -40,21 +34,19 @@ fn main() -> std::io::Result<()> {
     }
 
     let mut grid = Grid {
-        grid: [[97, 0], [98, 0]],
+        grid: [[0, 0], [0, 0]],
         row_options: vec![dictionary[GRID_WIDTH].clone(); GRID_HEIGHT],
-        col_options: vec![dictionary[GRID_WIDTH].clone(); GRID_WIDTH],
+        col_options: vec![dictionary[GRID_HEIGHT].clone(); GRID_WIDTH],
     };
 
-    let start = Instant::now();
-
     update_bounds(&mut grid);
-    println!("{:?}", grid);
 
+    let start = Instant::now();
+    let solution = solve(&grid, &dictionary);
     let elapsed = start.elapsed();
 
     println!("took {:?}", elapsed);
 
-    let solution = solve(grid, &dictionary);
     if let Some(s) = solution {
         println!("{}", format_solution(&s));
     } else {
@@ -64,40 +56,63 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn solve<'a>(grid: Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid<'a>> {
-    let mut new_grid = (grid).clone();
+fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid<'a>> {
+    let mut new_grid = grid.clone();
 
-    //    for (index, row) in grid.iter().enumerate() {
-    //        if row[0] == 0 {
-    //            'word_loop: for word in dictionary[GRID_WIDTH].iter() {
-    //                new_grid[index] = (*word).try_into().expect("wrong word length");
-    //                if let Some(sol) = solve(new_grid, dictionary) {
-    //                    for x in 0..GRID_WIDTH {
-    //                        let mut word = [0; GRID_HEIGHT];
-    //
-    //                        for y in 0..GRID_HEIGHT {
-    //                            word[y] = sol[y][x];
-    //                        }
-    //                        if !dictionary[GRID_HEIGHT].binary_search(&&word[..]).is_ok() {
-    //                            continue 'word_loop;
-    //                        }
-    //                    }
-    //                    return Some(sol);
-    //                }
-    //            }
-    //        }
-    //    }
+    if grid.grid.iter().all(|w| w.iter().all(|c| *c != 0)) {
+        return Some(new_grid);
+    }
 
-    // if let Some((direction, index)) = update_bounds(&mut grid.clone(), &dictionary) {
-    //     match direction {
-    //         Direction::Horizontal => { return None; },
-    //         Direction::Vertical => { return None; },
-    //     }
-    // } else {
-    //     return Some(grid);
-    // };
+    update_bounds(&mut new_grid);
 
-    Some(new_grid)
+    println!("{:?}", new_grid);
+
+    // first, determine the variable which has the least options
+    let (least_row_index, least_row) = grid
+        .row_options
+        .iter()
+        .enumerate()
+        .max_by_key(|(_, x)| x.len())
+        .unwrap();
+
+    let (least_column_index, least_column) = grid
+        .col_options
+        .iter()
+        .enumerate()
+        .max_by_key(|(_, x)| x.len())
+        .unwrap();
+
+    // TODO: check if the row/col with the least number of options has no
+    // options left. this means we there is no possible solution
+    // TODO: if there is only one option left this means the word is
+    // already filled in, so we shouldn't try to fill it in again
+
+    // then, try all of the words which are still possible
+    // (depending on whether it's a row or column we have different procedures)
+    if least_column.len() < least_row.len() {
+        for word in least_column {
+            for y in 0..GRID_HEIGHT {
+                new_grid.grid[y][least_column_index] = word[y];
+            }
+            let solution = solve(&new_grid, dictionary);
+            if solution.is_none() {
+                continue;
+            } else {
+                return solution;
+            }
+        }
+    } else {
+        for word in least_row {
+            new_grid.grid[least_row_index] = (*word).try_into().expect("wrong length");
+            if let Some(sol) = solve(&new_grid, dictionary) {
+                return Some(sol);
+            } else {
+                continue;
+            }
+        }
+    }
+
+    None
 }
 
 // update the list of possible words for all the rows and columns
