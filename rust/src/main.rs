@@ -9,7 +9,7 @@ struct Grid<'a> {
     col_options: Vec<Vec<&'a [u8]>>,
 }
 
-const GRID_WIDTH: usize = 4;
+const GRID_WIDTH: usize = 3;
 const GRID_HEIGHT: usize = 4;
 const MAX_WORD_LENGTH: usize = 25;
 
@@ -61,9 +61,10 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
 
     update_bounds(&mut new_grid);
 
-    if grid.grid.iter().all(|w| w.iter().all(|c| *c != 0)) && !grid.row_options.iter().any(|x| x.is_empty()) && !grid.col_options.iter().any(|x| x.is_empty()) {
-        println!("{}", grid.row_options.iter().any(|x| x.is_empty())); 
-        println!("{:?}", new_grid);
+    if new_grid.grid.iter().all(|w| w.iter().all(|c| *c != 0))
+        && !new_grid.row_options.iter().any(|x| x.is_empty())
+        && !new_grid.col_options.iter().any(|x| x.is_empty())
+    {
         return Some(new_grid);
     }
 
@@ -78,34 +79,37 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
     let mut least_row_index = 0;
     for i in 0..GRID_HEIGHT {
         match grid.row_options[i].len() {
-            0 => { return None; },
+            0 => {
+                return None;
+            }
             1 => {
                 if grid.grid[i].iter().any(|x| *x == 0) {
                     least_row_index = i;
                 }
-            },
+            }
             x if x > grid.row_options[least_row_index].len() => {
                 least_row_index = i;
-            },
+            }
             _ => (),
         }
     }
 
     let least_row = &grid.row_options[least_row_index];
-    
 
     let mut least_col_index = 0;
     for i in 0..GRID_WIDTH {
         match grid.col_options[i].len() {
-            0 => { return None; },
+            0 => {
+                return None;
+            }
             1 => {
                 if grid.grid.iter().map(|x| x[i]).any(|x| x == 0) {
                     least_col_index = i;
                 }
-            },
+            }
             x if x > grid.col_options[least_col_index].len() => {
                 least_col_index = i;
-            },
+            }
             _ => (),
         }
     }
