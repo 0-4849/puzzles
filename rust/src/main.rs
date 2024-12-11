@@ -9,8 +9,8 @@ struct Grid<'a> {
     col_options: Vec<Vec<&'a [u8]>>,
 }
 
-const GRID_WIDTH: usize = 3;
-const GRID_HEIGHT: usize = 4;
+const GRID_WIDTH: usize = 4;
+const GRID_HEIGHT: usize = 5;
 const MAX_WORD_LENGTH: usize = 25;
 
 fn main() -> std::io::Result<()> {
