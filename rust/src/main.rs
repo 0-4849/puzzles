@@ -61,6 +61,12 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
 
     update_bounds(&mut new_grid);
 
+    if grid.grid.iter().all(|w| w.iter().all(|c| *c != 0)) && !grid.row_options.iter().any(|x| x.is_empty()) && !grid.col_options.iter().any(|x| x.is_empty()) {
+        println!("{}", grid.row_options.iter().any(|x| x.is_empty())); 
+        println!("{:?}", new_grid);
+        return Some(new_grid);
+    }
+
     //println!("{:?}", new_grid);
 
     // first, determine the variable which has the least options
@@ -112,9 +118,6 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
     // is because if we did it at the start, the puzzle would always
     // return succesully, even if the last word didn't fit
 
-    if grid.grid.iter().all(|w| w.iter().all(|c| *c != 0)) {
-        return Some(new_grid);
-    }
     // then, try all of the words which are still possible
     // (depending on whether it's a row or column we have different procedures)
     if least_col.len() < least_row.len() {
