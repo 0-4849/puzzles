@@ -9,8 +9,9 @@ struct Grid<'a> {
     col_options: Vec<Vec<&'a [u8]>>,
 }
 
-const GRID_WIDTH: usize = 6;
-const GRID_HEIGHT: usize = 6;
+const GRID_WIDTH: usize = 4;
+const GRID_HEIGHT: usize = 4;
+const MIN_LOOK: usize = 10;
 const MAX_WORD_LENGTH: usize = 25;
 
 fn main() -> std::io::Result<()> {
@@ -137,12 +138,21 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
             }
         }
     } else {
+        let candidates = least_row[0..MIN_LOOK - 1];
+
+        for candidate in candidates {
+            let temp_grid = new_grid.clone();
+            temp_grid.grid[least_row_index] = (*candidate).try_into().expect("wrong length");
+            update_bounds(&mut temp_grid, dictionary);
+        }
+
         for word in least_row {
             new_grid.grid[least_row_index] = (*word).try_into().expect("wrong length");
-            if let Some(sol) = solve(&new_grid, dictionary) {
-                return Some(sol);
-            } else {
+            let solution = solve(&new_grid, dictionary);
+            if solution.is_none() {
                 continue;
+            } else {
+                return solution;
             }
         }
     }
