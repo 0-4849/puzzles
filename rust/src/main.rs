@@ -138,12 +138,23 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
             }
         }
     } else {
-        let candidates = least_row[0..MIN_LOOK - 1];
+        //let candidates = least_row[0..MIN_LOOK - 1];
+        //let candidates_options = vec![0; MIN_LOOK];
+        let best_candidate_index = 0;
 
-        for candidate in candidates {
+        //TODO: remove unnecessary clones
+        for candidate_index in 0..MIN_LOOK {
             let temp_grid = new_grid.clone();
-            temp_grid.grid[least_row_index] = (*candidate).try_into().expect("wrong length");
+            temp_grid.grid[least_row_index] = (*least_row[candidate_index]).try_into().expect("wrong length");
             update_bounds(&mut temp_grid, dictionary);
+
+            let options_product: f64 
+                = temp_grid.row_options.iter().map(|x| x.len() ).product() as f64
+                * temp_grid.col_options.iter().map(|x| x.len() ).product() as f64;
+
+            if options_product > 0{
+            }
+
         }
 
         for word in least_row {
