@@ -1,6 +1,9 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::time::Instant;
+use rand::thread_rng;
+use rand::seq::SliceRandom;
+
 
 #[derive(Debug, Clone)]
 struct Grid<'a> {
@@ -31,7 +34,9 @@ fn main() -> std::io::Result<()> {
     }
 
     for lists in dictionary.iter_mut() {
-        lists.sort();
+        //lists.sort();
+        lists.shuffle(&mut thread_rng());
+        println!("{:?}", lists[0..10]);
     }
 
     let mut grid = Grid {
@@ -140,7 +145,8 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
     } else {
         //let candidates = least_row[0..MIN_LOOK - 1];
         //let candidates_options = vec![0; MIN_LOOK];
-        let best_candidate_index = 0;
+        let mut best_candidate_index = 0;
+        let mut most_options = 0;
 
         //TODO: remove unnecessary clones
         for candidate_index in 0..MIN_LOOK {
@@ -152,9 +158,10 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
                 = temp_grid.row_options.iter().map(|x| x.len() ).product() as f64
                 * temp_grid.col_options.iter().map(|x| x.len() ).product() as f64;
 
-            if options_product > 0{
+            if options_product > most_options {
+                most_options = options_product;
+                best_candidate_index = candidate_index;
             }
-
         }
 
         for word in least_row {
