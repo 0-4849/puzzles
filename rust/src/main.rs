@@ -18,7 +18,7 @@ const GRID_HEIGHT: usize = 5;
 const MAX_WORD_LENGTH: usize = 25;
 
 fn main() -> std::io::Result<()> {
-    let mut word_file = File::open("dict.txt")?;
+    let mut word_file = File::open("dict1.txt")?;
     let mut word_buf = String::new();
 
     word_file.read_to_string(&mut word_buf)?;
@@ -173,6 +173,9 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
     // (depending on whether it's a row or column we have different procedures)
     if least_col.len() < least_row.len() {
         for word in least_col {
+            if (GRID_WIDTH == GRID_HEIGHT) && new_grid.row_options[least_col_index] == vec![*word] {
+                continue;
+            }
             for y in 0..GRID_HEIGHT {
                 new_grid.grid[y][least_col_index] = word[y];
             }
@@ -236,6 +239,9 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
         // });
 
         for word in least_row {
+            if (GRID_WIDTH == GRID_HEIGHT) && new_grid.col_options[least_row_index] == vec![*word] {
+                continue;
+            }
             new_grid.grid[least_row_index] = (*word).try_into().expect("wrong length");
             let solution = solve(&new_grid, dictionary);
             if solution.is_none() {
