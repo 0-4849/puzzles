@@ -1,5 +1,4 @@
 #![allow(unused_imports)]
-use itertools::interleave;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fs::File;
@@ -15,15 +14,26 @@ struct Grid<'a> {
 
 const GRID_WIDTH: usize = 5;
 const GRID_HEIGHT: usize = 5;
-const MIN_LOOK: usize = 20;
+// const MIN_LOOK: usize = 20;
 const MAX_WORD_LENGTH: usize = 25;
 
 fn main() -> std::io::Result<()> {
-    let mut word_file = File::open("Woorden.txt")?;
+    let mut word_file = File::open("dict.txt")?;
     let mut word_buf = String::new();
 
     word_file.read_to_string(&mut word_buf)?;
     let word_list: Vec<&[u8]> = word_buf.split("\n").map(|s| s.as_bytes()).collect();
+    // uncomment to randomly shuffle word list
+
+    // word_list.shuffle(&mut thread_rng());
+    // print!(
+    //     "{}",
+    //     word_list
+    //         .iter()
+    //         .map(|s| String::from_utf8(s.to_vec()).expect("incorrect utf8 encoding"))
+    //         .collect::<Vec<String>>()
+    //         .join("\n")
+    // );
 
     let mut dictionary = vec![Vec::new(); MAX_WORD_LENGTH];
 
@@ -34,13 +44,10 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    // randomly shuffle lists
-    for lists in dictionary.iter_mut() {
-        lists.shuffle(&mut thread_rng());
-    }
-    println!("{:?}", dictionary);
-
     // shuffle dictionary in a deterministic way to increase performance
+    // this ended up not being faster (and causing a stack overflow for
+    // unknown reasons), so it is left out at the moment
+
     // for list in dictionary.iter_mut() {
     //     if list.len() <= MIN_LOOK {
     //         continue;
@@ -56,7 +63,6 @@ fn main() -> std::io::Result<()> {
     //     }
     //     *list = new_list;
     // }
-    // println!("shuffled");
 
     let mut grid = Grid {
         grid: [[0; GRID_WIDTH]; GRID_HEIGHT],
@@ -66,14 +72,31 @@ fn main() -> std::io::Result<()> {
 
     update_bounds(&mut grid);
 
-    let start = Instant::now();
     let solution = solve(&grid, &dictionary);
-    let elapsed = start.elapsed();
 
-    println!("took {:?}", elapsed);
-
+    // output the horizontal words and then the vertical words
+    // these will be passed to the python program and clues will
+    // be found for them
     if let Some(s) = solution {
-        println!("{}", format_solution(&s));
+        // println!("{}", format_solution(&s));
+
+        println!(
+            "{}",
+            s.row_options
+                .iter()
+                .map(|s| String::from_utf8(s[0].to_vec()).expect("incorrect utf8 encoding"))
+                .collect::<Vec<String>>()
+                .join(",")
+        );
+
+        println!(
+            "{}",
+            s.col_options
+                .iter()
+                .map(|s| String::from_utf8(s[0].to_vec()).expect("incorrect utf8 encoding"))
+                .collect::<Vec<String>>()
+                .join(",")
+        );
     } else {
         println!("no solution found")
     }
@@ -86,14 +109,19 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
 
     update_bounds(&mut new_grid);
 
-    if new_grid.grid.iter().all(|w| w.iter().all(|c| *c != 0))
+    // if the entire grid is filled in, and the there are not
+    // no options for all of the word, we have found a solution
+    if new_grid
+        .row_options
+        .iter()
+        .zip(new_grid.col_options.iter())
+        .all(|(w, v)| w != v)
+        && new_grid.grid.iter().all(|w| w.iter().all(|c| *c != 0))
         && !new_grid.row_options.iter().any(|x| x.is_empty())
         && !new_grid.col_options.iter().any(|x| x.is_empty())
     {
         return Some(new_grid);
     }
-
-    //println!("{:?}", new_grid);
 
     // first, determine the variable which has the least options
     // if the number of options left is 0, this means the word can never be filled in,
@@ -141,12 +169,6 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
 
     let least_col = &grid.col_options[least_col_index];
 
-    // here, we check if the grid has no empty spaces left;
-    // if this is true, we have succeeded in solving the puzzle,
-    // the reason we check this here (and not at the start of the function)
-    // is because if we did it at the start, the puzzle would always
-    // return succesully, even if the last word didn't fit
-
     // then, try all of the words which are still possible
     // (depending on whether it's a row or column we have different procedures)
     if least_col.len() < least_row.len() {
@@ -162,6 +184,11 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
             }
         }
     } else {
+        // NOTE: the code below was an attempt at speeding up the solving process
+        // by smartly selecting what word to try first
+        // however, it did not end up improving the runtime, so it's left out
+        // it's still here for completeness's sake
+
         // let mut indices = (0..least_row.len()).collect::<Vec<_>>();
         // // let candidates = least_row[0..MIN_LOOK - 1];
         // let mut candidates_options = vec![0.0; std::cmp::min(MIN_LOOK, least_row.len())];
@@ -224,6 +251,8 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
 
 // update the list of possible words for all the rows and columns
 // based on what letters are already filled in in the grid
+// this is done by removing any words which interfere with the already
+// placed letters
 fn update_bounds<'a>(grid: &mut Grid<'a>) {
     for row_index in 0..GRID_HEIGHT {
         grid.row_options[row_index].retain(|&word| {
@@ -248,6 +277,8 @@ fn update_bounds<'a>(grid: &mut Grid<'a>) {
     }
 }
 
+// currently unused, but displays the words in a nice grid
+#[allow(dead_code)]
 fn format_solution(solution: &Grid) -> String {
     solution
         .grid
@@ -256,7 +287,3 @@ fn format_solution(solution: &Grid) -> String {
         .collect::<Vec<String>>()
         .join("\n")
 }
-
-// fn get_dictionary(file_name: String) -> std::io::Result<Vec<Vec<&[u8]>>> {
-//     Ok(vec![vec![&[0]]])
-// }
