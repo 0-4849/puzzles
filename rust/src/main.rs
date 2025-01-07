@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+use itertools::interleave;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fs::File;
@@ -13,7 +15,7 @@ struct Grid<'a> {
 
 const GRID_WIDTH: usize = 4;
 const GRID_HEIGHT: usize = 4;
-const MIN_LOOK: usize = 10;
+const MIN_LOOK: usize = 20;
 const MAX_WORD_LENGTH: usize = 25;
 
 fn main() -> std::io::Result<()> {
@@ -32,10 +34,26 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    for lists in dictionary.iter_mut() {
-        //lists.sort();
-        lists.shuffle(&mut thread_rng());
-        // println!("{:?}", &lists[0..10]);
+    // randomly shuffle lists
+    // for lists in dictionary.iter_mut() {
+    //     lists.shuffle(&mut thread_rng());
+    // }
+
+    // shuffle dictionary in a deterministic way to increase performance
+    for list in dictionary.iter_mut() {
+        if list.len() <= MIN_LOOK {
+            continue;
+        };
+
+        let mut new_list = list.clone();
+        for (j, word) in list.into_iter().enumerate().skip(1) {
+            let num_of_groups = new_list.len() / MIN_LOOK;
+            let offset = j / num_of_groups;
+            let group_pos = MIN_LOOK * (j % num_of_groups);
+
+            new_list[group_pos + offset] = word;
+        }
+        *list = new_list;
     }
 
     let mut grid = Grid {
@@ -142,38 +160,55 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
             }
         }
     } else {
-        //let candidates = least_row[0..MIN_LOOK - 1];
-        //let candidates_options = vec![0; MIN_LOOK];
-        let mut best_candidate_index = 0;
-        let mut most_options: f64 = 0.0;
+        let mut indices = (0..least_row.len()).collect::<Vec<_>>();
+        // // let candidates = least_row[0..MIN_LOOK - 1];
+        // let mut candidates_options = vec![0.0; std::cmp::min(MIN_LOOK, least_row.len())];
+        // // let mut best_candidate_index = 0;
+        // // let mut most_options: f64 = 0.0;
 
-        //TODO: remove unnecessary clones
-        for candidate_index in 0..std::cmp::min(MIN_LOOK, least_row.len()) {
-            let mut temp_grid = new_grid.clone();
-            temp_grid.grid[least_row_index] = (*least_row[candidate_index])
-                .try_into()
-                .expect("wrong length");
-            update_bounds(&mut temp_grid);
+        // //TODO: remove unnecessary clones
+        // let mut temp_grid = new_grid.clone();
 
-            let options_product: f64 = temp_grid
-                .row_options
-                .iter()
-                .map(|x| x.len())
-                .product::<usize>() as f64
-                * temp_grid
-                    .col_options
-                    .iter()
-                    .map(|x| x.len())
-                    .product::<usize>() as f64;
+        // for (candidate_index, candidate_options) in candidates_options.iter_mut().enumerate() {
+        //     temp_grid.row_options = grid.row_options.clone();
+        //     temp_grid.col_options = grid.col_options.clone();
 
-            if options_product > most_options {
-                most_options = options_product;
-                best_candidate_index = candidate_index;
-            }
-        }
+        //     temp_grid.grid[least_row_index] = (*least_row[candidate_index])
+        //         .try_into()
+        //         .expect("wrong length");
+        //     update_bounds(&mut temp_grid);
 
-        for word in least_row {
-            new_grid.grid[least_row_index] = (*word).try_into().expect("wrong length");
+        //     let options_product: f64 = temp_grid
+        //         .row_options
+        //         .iter()
+        //         .map(|x| x.len())
+        //         .product::<usize>() as f64
+        //         * temp_grid
+        //             .col_options
+        //             .iter()
+        //             .map(|x| x.len())
+        //             .product::<usize>() as f64;
+
+        //     *candidate_options = options_product;
+        // }
+
+        // indices[0..candidates_options.len()].sort_by(|&j, &i| {
+        //     if let Some(x) = candidates_options.get(i) {
+        //         *x
+        //     } else {
+        //         i as f64
+        //     }
+        //     .partial_cmp(&if let Some(x) = candidates_options.get(j) {
+        //         *x
+        //     } else {
+        //         j as f64
+        //     })
+        //     .unwrap()
+        // });
+
+        for i in 0..least_row.len() {
+            new_grid.grid[least_row_index] =
+                (least_row[indices[i]]).try_into().expect("wrong length");
             let solution = solve(&new_grid, dictionary);
             if solution.is_none() {
                 continue;
@@ -207,7 +242,6 @@ fn update_bounds<'a>(grid: &mut Grid<'a>) {
                     return false;
                 }
             }
-
             true
         });
     }
