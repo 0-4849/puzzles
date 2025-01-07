@@ -13,8 +13,8 @@ struct Grid<'a> {
     col_options: Vec<Vec<&'a [u8]>>,
 }
 
-const GRID_WIDTH: usize = 4;
-const GRID_HEIGHT: usize = 4;
+const GRID_WIDTH: usize = 5;
+const GRID_HEIGHT: usize = 5;
 const MIN_LOOK: usize = 20;
 const MAX_WORD_LENGTH: usize = 25;
 
@@ -35,26 +35,28 @@ fn main() -> std::io::Result<()> {
     }
 
     // randomly shuffle lists
-    // for lists in dictionary.iter_mut() {
-    //     lists.shuffle(&mut thread_rng());
-    // }
+    for lists in dictionary.iter_mut() {
+        lists.shuffle(&mut thread_rng());
+    }
+    println!("{:?}", dictionary);
 
     // shuffle dictionary in a deterministic way to increase performance
-    for list in dictionary.iter_mut() {
-        if list.len() <= MIN_LOOK {
-            continue;
-        };
+    // for list in dictionary.iter_mut() {
+    //     if list.len() <= MIN_LOOK {
+    //         continue;
+    //     };
 
-        let mut new_list = list.clone();
-        for (j, word) in list.into_iter().enumerate().skip(1) {
-            let num_of_groups = new_list.len() / MIN_LOOK;
-            let offset = j / num_of_groups;
-            let group_pos = MIN_LOOK * (j % num_of_groups);
+    //     let mut new_list = list.clone();
+    //     for (j, word) in list.into_iter().enumerate().skip(1) {
+    //         let num_of_groups = new_list.len() / MIN_LOOK;
+    //         let offset = j / num_of_groups;
+    //         let group_pos = MIN_LOOK * (j % num_of_groups);
 
-            new_list[group_pos + offset] = word;
-        }
-        *list = new_list;
-    }
+    //         new_list[group_pos + offset] = word;
+    //     }
+    //     *list = new_list;
+    // }
+    // println!("shuffled");
 
     let mut grid = Grid {
         grid: [[0; GRID_WIDTH]; GRID_HEIGHT],
@@ -160,7 +162,7 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
             }
         }
     } else {
-        let mut indices = (0..least_row.len()).collect::<Vec<_>>();
+        // let mut indices = (0..least_row.len()).collect::<Vec<_>>();
         // // let candidates = least_row[0..MIN_LOOK - 1];
         // let mut candidates_options = vec![0.0; std::cmp::min(MIN_LOOK, least_row.len())];
         // // let mut best_candidate_index = 0;
@@ -206,9 +208,8 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
         //     .unwrap()
         // });
 
-        for i in 0..least_row.len() {
-            new_grid.grid[least_row_index] =
-                (least_row[indices[i]]).try_into().expect("wrong length");
+        for word in least_row {
+            new_grid.grid[least_row_index] = (*word).try_into().expect("wrong length");
             let solution = solve(&new_grid, dictionary);
             if solution.is_none() {
                 continue;
