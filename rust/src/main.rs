@@ -104,6 +104,7 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
+// recursive solve function
 fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid<'a>> {
     let mut new_grid = grid.clone();
 
@@ -173,6 +174,8 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
     // (depending on whether it's a row or column we have different procedures)
     if least_col.len() < least_row.len() {
         for word in least_col {
+            // here we check if the word to be filled in had already been used in the puzzle
+            // if so, we skip it, since puzzles with duplicated words are not fun
             if (GRID_WIDTH == GRID_HEIGHT) && new_grid.row_options[least_col_index] == vec![*word] {
                 continue;
             }
@@ -238,6 +241,7 @@ fn solve<'a>(grid: &Grid<'a>, dictionary: &'a Vec<Vec<&'a [u8]>>) -> Option<Grid
         //     .unwrap()
         // });
 
+        // same thing as for the columns, but here for the rows
         for word in least_row {
             if (GRID_WIDTH == GRID_HEIGHT) && new_grid.col_options[least_row_index] == vec![*word] {
                 continue;
